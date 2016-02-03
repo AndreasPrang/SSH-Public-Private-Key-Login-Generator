@@ -93,16 +93,39 @@ function registerKey {
   ssh-add $private_key_path
 }
 
+function removePubicKey {
+  read -p "Please enter target ssh server (FQN or IP w/o port!): " server_name
+  read -p "Please enter target ssh server port (22): " server_port
+  read -p "Please enter path to public key file ($public_key_path):" public_key_path
+  public_key_path=${public_key_path:-"$default_public_key_path"}
+  public_key_path=$(find $public_key_path)
+  ! [ -e "$public_key_path" ] && echo "Public key not found! Do not use paths starting with: '~'" && exit 0
+  default_public_key_path="$public_key_path"
+
+  read -p "Please enter user on target ssh server ($default_server_user): " server_user
+  server_user=${server_user:-$default_server_user}
+  default_server_user=$server_user
+
+  server_port=${server_port:-22}
+
+  public_key_string=$(cat $public_key_path)
+  public_key_string="${public_key_string//\//\\/}"
+  echo="sed -i 's/$public_key_string/ /g' ~/.ssh/authorized_keys2"
+  ssh -p $server_port $server_user@$server_name "sed -i 's/$public_key_string/ /g' ~/.ssh/authorized_keys2"
+}
+
 while true; do
   echo "1) Install new public/private ssh key"
   echo "2) Install existing public key on remote server"
   echo "3) Register private key locally"
+  echo "4) Remove public key on remote server"
   echo "x) Exit"
   read -p ": " yn
   case $yn in
     [1]* ) installNewKeys;;
     [2]* ) installExistingKey;;
     [3]* ) registerKey;;
+    [4]* ) removePubicKey;;
     * ) echo "Bye..."; break;;
   esac
 done
