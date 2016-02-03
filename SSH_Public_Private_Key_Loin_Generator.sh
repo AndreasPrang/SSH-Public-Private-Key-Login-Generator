@@ -29,7 +29,13 @@ function installNewKeys {
     mkdir -p $local_key_path
 
     echo "Creating Certificates"
-    ssh-keygen -t dsa -f $local_key_path$server_name
+    echo "1) rsa (default & recommended)"
+    echo "2) dsa"
+    read -p ": " yn
+    case $yn in
+      [2]* )  ssh-keygen -t dsa -b 1024 -f $local_key_path$server_name;;
+      * )     ssh-keygen -t rsa -b 4096 -f $local_key_path$server_name;;
+    esac
 
     echo "-----------------------------------------------------------------"
     echo "Copy public key to "$server_user"@"$server_name":"$server_port
